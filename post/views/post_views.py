@@ -6,6 +6,7 @@ from http import HTTPStatus
 from ..models import Comment, Post
 
 import json
+
 # Create your views here.
 
 
@@ -15,28 +16,54 @@ def get(request):
         author = User.objects.filter(username=request.GET.get("username"))
         if bool(author):
             posts = [
-                {"Title": p.Title}
-                for p in (Post.objects.filter(Author=author[0].id))]
+                {"Title": p.Title} for p in (Post.objects.filter(Author=author[0].id))
+            ]
         else:
-            return JsonResponse({"error message": "no author found with the requested username."}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse(
+                {"error message": "no author found with the requested username."},
+                status=HTTPStatus.NOT_FOUND,
+            )
         context = {"posts": posts}
         return JsonResponse(context, safe=False)
-    return JsonResponse({"error message": "method is not supported."}, status=HTTPStatus.NOT_FOUND)
+    return JsonResponse(
+        {"error message": "method is not supported."}, status=HTTPStatus.NOT_FOUND
+    )
+
 
 def detail(request):
     # show specific post
     if request.method == "GET":
         author = User.objects.filter(username=request.GET.get("username"))
         if not bool(author):
-            return JsonResponse({"error message": "no author found with the requested username."}, status=HTTPStatus.NOT_FOUND)
-        post = Post.objects.filter(id=int(request.GET.get('id')), Author=author[0].id).first()
+            return JsonResponse(
+                {"error message": "no author found with the requested username."},
+                status=HTTPStatus.NOT_FOUND,
+            )
+        post = Post.objects.filter(
+            id=int(request.GET.get("id")), Author=author[0].id
+        ).first()
         if bool(post):
-            comments = [{"body":c.Body} for c in Comment.objects.filter(post__id=post.id).all()]
-            context = {"Post details": {"title": post.Title, "body": post.Body, "comments": comments}}
+            comments = [
+                {"body": c.Body} for c in Comment.objects.filter(post__id=post.id).all()
+            ]
+            context = {
+                "Post details": {
+                    "title": post.Title,
+                    "body": post.Body,
+                    "comments": comments,
+                }
+            }
             return JsonResponse(context, safe=False)
         else:
-            return JsonResponse({"message": "post does not exist."}, safe=False, status=HTTPStatus.NOT_FOUND)
-    return JsonResponse({"error message": "method is not supported."}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse(
+                {"message": "post does not exist."},
+                safe=False,
+                status=HTTPStatus.NOT_FOUND,
+            )
+    return JsonResponse(
+        {"error message": "method is not supported."}, status=HTTPStatus.NOT_FOUND
+    )
+
 
 @csrf_exempt
 def post(request):
@@ -47,10 +74,18 @@ def post(request):
         post_body = body.get("body")
         author = User.objects.filter(username=author_name)
         if not bool(author):
-            return JsonResponse({"error message": "no author found with the requested username."}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse(
+                {"error message": "no author found with the requested username."},
+                status=HTTPStatus.NOT_FOUND,
+            )
         Post.objects.create(Author=author[0], Title=post_title, Body=post_body)
-        return JsonResponse({"message": "post was created successfuly!"}, status=HTTPStatus.CREATED)
-    return JsonResponse({"error message": "method is not supported."}, status=HTTPStatus.NOT_FOUND)
+        return JsonResponse(
+            {"message": "post was created successfuly!"}, status=HTTPStatus.CREATED
+        )
+    return JsonResponse(
+        {"error message": "method is not supported."}, status=HTTPStatus.NOT_FOUND
+    )
+
 
 @csrf_exempt
 def update(request):
@@ -63,10 +98,17 @@ def update(request):
             post = Post.objects.get(pk=post_id)
             post.Body = new_body
             post.save(0)
-            return JsonResponse({"message": "post body is updated successfully."}, status=HTTPStatus.OK)
+            return JsonResponse(
+                {"message": "post body is updated successfully."}, status=HTTPStatus.OK
+            )
         except:
-            return JsonResponse({"error message": "post does not exist."}, status=HTTPStatus.NOT_FOUND)
-    return JsonResponse({"error message": "method is not supported."}, status=HTTPStatus.NOT_FOUND)
+            return JsonResponse(
+                {"error message": "post does not exist."}, status=HTTPStatus.NOT_FOUND
+            )
+    return JsonResponse(
+        {"error message": "method is not supported."}, status=HTTPStatus.NOT_FOUND
+    )
+
 
 @csrf_exempt
 def delete(request):
@@ -76,8 +118,13 @@ def delete(request):
         try:
             post = Post.objects.get(pk=post_id)
             post.delete()
-            return JsonResponse({"message": "post was deleted successfully."}, status=HTTPStatus.OK)
+            return JsonResponse(
+                {"message": "post was deleted successfully."}, status=HTTPStatus.OK
+            )
         except:
-            return JsonResponse({"error message": "post does not exist."}, status=HTTPStatus.NOT_FOUND)
-    return JsonResponse({"error message": "method is not supported."}, status=HTTPStatus.NOT_FOUND)
-
+            return JsonResponse(
+                {"error message": "post does not exist."}, status=HTTPStatus.NOT_FOUND
+            )
+    return JsonResponse(
+        {"error message": "method is not supported."}, status=HTTPStatus.NOT_FOUND
+    )
