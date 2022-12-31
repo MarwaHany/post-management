@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
@@ -68,12 +69,21 @@ def post(request):
 @authenticate_user
 @csrf_exempt
 def update(request):
-    print(request.headers)
+    user = authenticate(
+        request,
+        username=request.headers.get("username"),
+        password=request.headers.get("authorization"),
+    )
     body = json.loads(request.body)
     comment_id = body.get("comment_id")
     new_body = body.get("body")
     try:
         comment = Comment.objects.get(pk=comment_id)
+        if comment.Author.id != user.id:
+            return Response(
+                {"error message": "this user can not edit the requested comment."},
+                status=HTTPStatus.UNAUTHORIZED,
+            )
         comment.Body = new_body
         comment.save(0)
         return Response(
@@ -91,10 +101,20 @@ def update(request):
 @authenticate_user
 @csrf_exempt
 def delete(request):
+    user = authenticate(
+        request,
+        username=request.headers.get("username"),
+        password=request.headers.get("authorization"),
+    )
     body = json.loads(request.body)
     comment_id = int(body.get("comment_id"))
     try:
         comment = Comment.objects.get(pk=comment_id)
+        if comment.Author.id != user.id:
+            return Response(
+                {"error message": "this user can not delete the requested comment."},
+                status=HTTPStatus.UNAUTHORIZED,
+            )
         comment.delete()
         return Response(
             {"message": "comment was deleted successfully."}, status=HTTPStatus.OK
