@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from http import HTTPStatus
@@ -82,11 +83,21 @@ def post(request):
 @csrf_exempt
 @authenticate_user
 def update(request):
+    user = authenticate(
+        request,
+        username=request.headers.get("username"),
+        password=request.headers.get("authorization"),
+    )
     body = json.loads(request.body)
     post_id = int(body.get("post_id"))
     new_body = body.get("body")
     try:
         post = Post.objects.get(pk=post_id)
+        if post.Author.id != user.id:
+            return Response(
+                {"error message": "this user can not edit the requested post."},
+                status=HTTPStatus.UNAUTHORIZED,
+            )
         post.Body = new_body
         post.save(0)
         return Response(
@@ -102,10 +113,20 @@ def update(request):
 @csrf_exempt
 @authenticate_user
 def delete(request):
+    user = authenticate(
+        request,
+        username=request.headers.get("username"),
+        password=request.headers.get("authorization"),
+    )
     body = json.loads(request.body)
     post_id = int(body.get("post_id"))
     try:
         post = Post.objects.get(pk=post_id)
+        if post.Author.id != user.id:
+            return Response(
+                {"error message": "this user can not delete the requested post."},
+                status=HTTPStatus.UNAUTHORIZED,
+            )
         post.delete()
         return Response(
             {"message": "post was deleted successfully."}, status=HTTPStatus.OK
